@@ -24,6 +24,8 @@ class LoadingScene extends Phaser.Scene {
             margin: 1,
             spacing: 1
         });
+
+        this.load.json('level', 'assets/json/level.json');
     }
 
     create() {

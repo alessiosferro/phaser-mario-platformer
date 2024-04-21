@@ -1,0 +1,34 @@
+{
+  "platforms": [
+    {
+      "x": 72,
+      "y": 450,
+      "numTiles": 6,
+      "key": "block"
+    },
+    {
+      "x": 0,
+      "y": 332,
+      "numTiles": 8,
+      "key": "block"
+    },
+    {
+      "x": 72,
+      "y": 222,
+      "numTiles": 8,
+      "key": "block"
+    },
+    {
+      "x": 0,
+      "y": 112,
+      "numTiles": 7,
+      "key": "block"
+    },
+    {
+      "x": 0,
+      "y": 568,
+      "numTiles": 1,
+      "key": "ground"
+    }
+  ]
+}

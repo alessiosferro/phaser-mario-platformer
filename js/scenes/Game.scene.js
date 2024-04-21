@@ -5,6 +5,8 @@ class GameScene extends Phaser.Scene {
     }
 
     init() {
+        this.isDebugMode = this.sys.game.config.physics.arcade.debug;
+
         this.playerConfig = {
             speed: {
                 x: 125,
@@ -44,42 +46,35 @@ class GameScene extends Phaser.Scene {
             yoyo: true,
             frameRate: 10
         });
+
+        if (this.isDebugMode) {
+            this.input.on('pointerdown', pointer => {
+                console.log({
+                    x: Math.round(pointer.x),
+                    y: Math.round(pointer.y)
+                });
+            })
+        }
     }
 
     createPlatforms() {
         this.platforms = this.add.group();
+        const levelData = this.cache.json.get('level');
 
-        const ground = this.add.sprite(180, 604, 'ground');
-        this.physics.add.existing(ground, true);
-        this.platforms.add(ground, true);
+        for (const { x, y, numTiles, key } of levelData.platforms) {
+            let sprite;
 
-        const platforms = [
-            {
-                x: 180,
-                y: 500,
-                tileLength: 5,
-            },
-            {
-                x: 100,
-                y: 400,
-                tileLength: 3
-            },
-            {
-                x: 260,
-                y: 400,
-                tileLength: 3
-            },
-            {
-                x: 180,
-                y: 300,
-                tileLength: 4
-            },
-        ];
+            if (numTiles > 1) {
+                const width = this.textures.get(key).get(0).width;
+                const height = this.textures.get(key).get(0).height;
 
-        for (const { x, y, tileLength} of platforms) {
-            const platform = this.add.tileSprite(x, y, 36 * tileLength, 30, 'block');
-            this.physics.add.existing(platform, true);
-            this.platforms.add(platform, true);
+                sprite = this.add.tileSprite(x, y, width * numTiles, height, key).setOrigin(0);
+            } else {
+                sprite = this.add.sprite(x, y, key).setOrigin(0);
+            }
+
+            this.physics.add.existing(sprite, true);
+            this.platforms.add(sprite, true);
         }
 
     }
