@@ -5,23 +5,35 @@ class GameScene extends Phaser.Scene {
     }
 
     init() {
-        this.playerSpeed = 125;
+        this.playerConfig = {
+            speed: {
+                x: 125,
+                y: 500
+            },
+            isTouchingGround: null
+        }
+
+        this.physics.world.bounds.width = 360;
+        this.physics.world.bounds.height = 700;
     }
 
     create() {
-        this.platforms = this.add.group();
-
-        const ground = this.add.sprite(180, 604, 'ground');
-        this.physics.add.existing(ground, true);
-        this.platforms.add(ground, true);
-
-        const platform = this.add.tileSprite(180, 500, 36 * 5, 30, 'block');
-        this.physics.add.existing(platform, true);
-        this.platforms.add(platform, true);
+        this.createPlatforms();
 
         this.cursors = this.input.keyboard.createCursorKeys();
         this.player = this.physics.add.sprite(180, 400, 'player', 3);
         this.physics.add.collider(this.platforms, this.player);
+        this.player.body.setCollideWorldBounds(true);
+
+        this.anims.create({
+            key: 'idle',
+            frames: this.anims.generateFrameNames('player', {
+                frames: [3, 4]
+            }),
+            repeat: -1,
+            yoyo: true,
+            frameRate: .5
+        });
 
         this.anims.create({
             key: 'run',
@@ -32,6 +44,43 @@ class GameScene extends Phaser.Scene {
             yoyo: true,
             frameRate: 10
         });
+    }
+
+    createPlatforms() {
+        this.platforms = this.add.group();
+
+        const ground = this.add.sprite(180, 604, 'ground');
+        this.physics.add.existing(ground, true);
+        this.platforms.add(ground, true);
+
+        const platforms = [
+            {
+                x: 180,
+                y: 500,
+                tileLength: 5,
+            },
+            {
+                x: 100,
+                y: 400,
+                tileLength: 3
+            },
+            {
+                x: 260,
+                y: 400,
+                tileLength: 3
+            },
+            {
+                x: 180,
+                y: 300,
+                tileLength: 4
+            },
+        ];
+
+        for (const { x, y, tileLength} of platforms) {
+            const platform = this.add.tileSprite(x, y, 36 * tileLength, 30, 'block');
+            this.physics.add.existing(platform, true);
+            this.platforms.add(platform, true);
+        }
 
     }
 
@@ -40,6 +89,12 @@ class GameScene extends Phaser.Scene {
     }
 
     updatePlayerVelocity() {
+        this.playerConfig.isTouchingGround = this.player.body.touching.down;
+
+        if (this.cursors.space.isDown || this.cursors.up.isDown) {
+            this.jumpPlayer();
+        }
+
         if (this.cursors.left.isDown && this.cursors.right.isDown) {
             return this.stopPlayer();
         }
@@ -55,16 +110,30 @@ class GameScene extends Phaser.Scene {
        this.stopPlayer();
     }
 
+    jumpPlayer() {
+        this.player.anims.stop();
+        this.player.setFrame(2);
+
+        if (this.playerConfig.isTouchingGround) {
+            this.player.setVelocityY(-this.playerConfig.speed.y);
+        }
+    }
+
     movePlayer(flipX = false) {
-        this.player.setVelocityX(flipX ? this.playerSpeed : -this.playerSpeed);
+        if (this.playerConfig.isTouchingGround) {
+            this.player.anims.play('run', true);
+        }
+
+        this.player.setVelocityX(flipX ? this.playerConfig.speed.x : -this.playerConfig.speed.x);
         this.player.flipX = flipX;
-        this.player.anims.play('run', true);
     }
 
     stopPlayer() {
-        this.player.anims.stop();
+        if (this.playerConfig.isTouchingGround) {
+            this.player.anims.play('idle', true);
+        }
+
         this.player.setVelocityX(0);
-        this.player.setFrame(3);
     }
 }
 
