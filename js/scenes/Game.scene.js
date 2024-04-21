@@ -20,32 +20,19 @@ class GameScene extends Phaser.Scene {
     }
 
     create() {
-        this.createPlatforms();
+        this.setupPlatforms();
+        this.setupPlayer();
+        this.setupFires();
+        this.setupGoal();
+
+        this.debugDrag([
+            ...this.platforms.getChildren(),
+            ...this.fires.getChildren(),
+            this.player,
+            this.goal,
+        ]);
 
         this.cursors = this.input.keyboard.createCursorKeys();
-        this.player = this.physics.add.sprite(180, 400, 'player', 3);
-        this.physics.add.collider(this.platforms, this.player);
-        this.player.body.setCollideWorldBounds(true);
-
-        this.anims.create({
-            key: 'idle',
-            frames: this.anims.generateFrameNames('player', {
-                frames: [3, 4]
-            }),
-            repeat: -1,
-            yoyo: true,
-            frameRate: .5
-        });
-
-        this.anims.create({
-            key: 'run',
-            frames: this.anims.generateFrameNames('player', {
-                frames: [0, 1, 2]
-            }),
-            repeat: -1,
-            yoyo: true,
-            frameRate: 10
-        });
 
         if (this.isDebugMode) {
             this.input.on('pointerdown', pointer => {
@@ -57,17 +44,31 @@ class GameScene extends Phaser.Scene {
         }
     }
 
-    createPlatforms() {
-        this.platforms = this.add.group();
-        const levelData = this.cache.json.get('level');
+    debugDrag(gameObjects) {
+        if (!this.isDebugMode) return;
 
-        for (const { x, y, numTiles, key } of levelData.platforms) {
+        gameObjects.forEach(obj => {
+            obj.setInteractive();
+            this.input.setDraggable(obj);
+        });
+
+        this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
+            gameObject.x = dragX;
+            gameObject.y = dragY;
+
+            console.log({ dragX, dragY })
+        });
+    }
+
+    setupPlatforms() {
+        this.platforms = this.add.group();
+        const { platforms } = this.cache.json.get('level');
+
+        for (const { x, y, numTiles, key } of platforms) {
             let sprite;
 
             if (numTiles > 1) {
-                const width = this.textures.get(key).get(0).width;
-                const height = this.textures.get(key).get(0).height;
-
+                const { width, height } = this.textures.get(key).get(0);
                 sprite = this.add.tileSprite(x, y, width * numTiles, height, key).setOrigin(0);
             } else {
                 sprite = this.add.sprite(x, y, key).setOrigin(0);
@@ -76,7 +77,34 @@ class GameScene extends Phaser.Scene {
             this.physics.add.existing(sprite, true);
             this.platforms.add(sprite, true);
         }
+    }
 
+    setupPlayer() {
+        const { player } = this.cache.json.get('level');
+        this.player = this.physics.add.sprite(player.x, player.y, 'player', 3);
+        this.physics.add.collider(this.platforms, this.player);
+        this.player.body.setCollideWorldBounds(true);
+    }
+
+    setupFires() {
+        this.fires = this.add.group();
+        const { fires } = this.cache.json.get('level');
+
+        for (const { x, y } of fires) {
+            const sprite = this.physics.add.sprite(x, y, 'fire');
+            sprite.body.allowGravity = false;
+            sprite.body.immovable = true;
+            sprite.anims.play('burning');
+            this.fires.add(sprite, true);
+        }
+    }
+
+    setupGoal() {
+        const { goal } = this.cache.json.get('level');
+
+        this.goal = this.physics.add.sprite(goal.x, goal.y, 'goal');
+
+        this.physics.add.collider(this.goal, this.platforms);
     }
 
     update() {
